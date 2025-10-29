@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import type { User, UserRole } from "@shared/schema";
+import type { User } from "@shared/schema";
+import { api } from "@/lib/api";
 
 interface AuthContextType {
   user: User | null;
@@ -12,38 +13,43 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem("crm_user");
-    if (stored) {
-      setUser(JSON.parse(stored));
+    const token = localStorage.getItem("crm_token");
+    if (token) {
+      api.getMe()
+        .then(setUser)
+        .catch(() => {
+          localStorage.removeItem("crm_token");
+        })
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
     }
   }, []);
 
   const login = async (username: string, password: string): Promise<boolean> => {
-    const mockUsers: User[] = [
-      { id: "1", username: "admin", password: "admin123", email: "admin@company.com", fullName: "John Admin", role: "admin", phone: "+1-555-0001", createdAt: new Date() },
-      { id: "2", username: "manager", password: "manager123", email: "manager@company.com", fullName: "Sarah Manager", role: "sales_manager", phone: "+1-555-0002", createdAt: new Date() },
-      { id: "3", username: "sales", password: "sales123", email: "sales@company.com", fullName: "Mike Executive", role: "sales_executive", phone: "+1-555-0003", createdAt: new Date() },
-      { id: "4", username: "accountant", password: "account123", email: "accountant@company.com", fullName: "Lisa Accountant", role: "accountant", phone: "+1-555-0004", createdAt: new Date() },
-      { id: "5", username: "engineer", password: "eng123", email: "engineer@company.com", fullName: "Tom Engineer", role: "engineer", phone: "+1-555-0005", createdAt: new Date() },
-      { id: "6", username: "client", password: "client123", email: "client@example.com", fullName: "Jane Client", role: "client", phone: "+1-555-0006", createdAt: new Date() },
-    ];
-
-    const foundUser = mockUsers.find(u => u.username === username && u.password === password);
-    if (foundUser) {
-      const userWithoutPassword = { ...foundUser, password: "" };
-      setUser(userWithoutPassword);
-      localStorage.setItem("crm_user", JSON.stringify(userWithoutPassword));
+    try {
+      const { user: loggedInUser, token } = await api.login(username, password);
+      setUser(loggedInUser);
+      localStorage.setItem("crm_token", token);
       return true;
+    } catch (error) {
+      console.error("Login failed:", error);
+      return false;
     }
-    return false;
   };
 
   const logout = () => {
+    api.logout().catch(console.error);
     setUser(null);
-    localStorage.removeItem("crm_user");
+    localStorage.removeItem("crm_token");
   };
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  }
 
   return (
     <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user }}>
