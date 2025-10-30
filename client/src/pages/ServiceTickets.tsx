@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { mockDataService, type TicketStatus, type TicketPriority } from "@/services/mockData";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,15 +14,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Search, Eye, Edit, AlertCircle } from "lucide-react";
-import type { ServiceTicket, TicketStatus, TicketPriority } from "@shared/schema";
-
-const mockTickets: (ServiceTicket & { clientName?: string; assignedToName?: string })[] = [
-  { id: "1", ticketNumber: "TKT-2024-001", clientId: "1", clientName: "Global Solutions Ltd", title: "Network connectivity issue", description: "Intermittent network drops in Building A", status: "in_progress", priority: "high", assignedTo: "5", assignedToName: "Tom Engineer", resolvedAt: null, createdBy: "1", createdAt: new Date("2024-10-20"), updatedAt: new Date("2024-10-22") },
-  { id: "2", ticketNumber: "TKT-2024-002", clientId: "2", clientName: "Tech Innovations Inc", title: "Software installation required", description: "Need to install latest version on 20 machines", status: "assigned", priority: "medium", assignedTo: "5", assignedToName: "Tom Engineer", resolvedAt: null, createdBy: "2", createdAt: new Date("2024-10-21"), updatedAt: new Date("2024-10-21") },
-  { id: "3", ticketNumber: "TKT-2024-003", clientId: "3", clientName: "Enterprise Systems Corp", title: "Server maintenance", description: "Scheduled maintenance for database server", status: "resolved", priority: "medium", assignedTo: "5", assignedToName: "Tom Engineer", resolvedAt: new Date("2024-10-24"), createdBy: "3", createdAt: new Date("2024-10-18"), updatedAt: new Date("2024-10-24") },
-  { id: "4", ticketNumber: "TKT-2024-004", clientId: "4", clientName: "Digital Marketing Pro", title: "Email server down", description: "Cannot send or receive emails", status: "open", priority: "urgent", assignedTo: null, resolvedAt: null, createdBy: "4", createdAt: new Date("2024-10-26"), updatedAt: new Date("2024-10-26") },
-  { id: "5", ticketNumber: "TKT-2024-005", clientId: "5", clientName: "CloudTech Solutions", title: "Printer configuration", description: "New printer not showing in network", status: "closed", priority: "low", assignedTo: "5", assignedToName: "Tom Engineer", resolvedAt: new Date("2024-10-19"), createdBy: "5", createdAt: new Date("2024-10-15"), updatedAt: new Date("2024-10-19") },
-];
 
 const statusColors: Record<TicketStatus, string> = {
   open: "bg-chart-1 text-white",
@@ -45,7 +37,9 @@ export default function ServiceTickets() {
   const isEngineer = user?.role === "engineer";
   const isClient = user?.role === "client";
 
-  const filteredTickets = mockTickets.filter(ticket => {
+  const allTickets = useMemo(() => mockDataService.getServiceTickets(), []);
+
+  const filteredTickets = allTickets.filter(ticket => {
     const matchesSearch = ticket.ticketNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          ticket.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesRole = isEngineer ? ticket.assignedTo === user.id : true;

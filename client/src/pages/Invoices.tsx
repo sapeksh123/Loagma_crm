@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { mockDataService } from "@/services/mockData";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,25 +14,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Search, Eye, Download, DollarSign } from "lucide-react";
-import type { Invoice, InvoiceStatus, PaymentStatus } from "@shared/schema";
 
-const mockInvoices: (Invoice & { clientName?: string })[] = [
-  { id: "1", invoiceNumber: "INV-2024-001", quotationId: "1", clientId: "1", clientName: "Global Solutions Ltd", status: "paid", paymentStatus: "paid", items: JSON.stringify([{ id: "1", description: "Enterprise Software License", quantity: 10, unitPrice: 5000, total: 50000 }]), subtotal: "50000", taxRate: "10", taxAmount: "5000", total: "55000", paidAmount: "55000", dueDate: new Date("2024-11-15"), notes: "Paid in full", createdBy: "4", createdAt: new Date("2024-10-16"), updatedAt: new Date("2024-10-20") },
-  { id: "2", invoiceNumber: "INV-2024-002", quotationId: null, clientId: "2", clientName: "Tech Innovations Inc", status: "sent", paymentStatus: "partial", items: JSON.stringify([{ id: "1", description: "Consulting Services", quantity: 40, unitPrice: 150, total: 6000 }]), subtotal: "6000", taxRate: "10", taxAmount: "600", total: "6600", paidAmount: "3300", dueDate: new Date("2024-11-10"), notes: "50% advance received", createdBy: "4", createdAt: new Date("2024-10-18"), updatedAt: new Date("2024-10-22") },
-  { id: "3", invoiceNumber: "INV-2024-003", quotationId: null, clientId: "3", clientName: "Enterprise Systems Corp", status: "sent", paymentStatus: "pending", items: JSON.stringify([{ id: "1", description: "Support Package", quantity: 1, unitPrice: 12000, total: 12000 }]), subtotal: "12000", taxRate: "10", taxAmount: "1200", total: "13200", paidAmount: "0", dueDate: new Date("2024-11-20"), notes: "Quarterly billing", createdBy: "4", createdAt: new Date("2024-10-22"), updatedAt: new Date("2024-10-22") },
-  { id: "4", invoiceNumber: "INV-2024-004", quotationId: "4", clientId: "4", clientName: "Digital Marketing Pro", status: "overdue", paymentStatus: "pending", items: JSON.stringify([{ id: "1", description: "Marketing Platform", quantity: 1, unitPrice: 8500, total: 8500 }]), subtotal: "8500", taxRate: "10", taxAmount: "850", total: "9350", paidAmount: "0", dueDate: new Date("2024-10-15"), notes: "Payment overdue", createdBy: "4", createdAt: new Date("2024-10-02"), updatedAt: new Date("2024-10-15") },
-  { id: "5", invoiceNumber: "INV-2024-005", quotationId: null, clientId: "1", clientName: "Global Solutions Ltd", status: "draft", paymentStatus: "pending", items: JSON.stringify([{ id: "1", description: "Additional Services", quantity: 5, unitPrice: 1200, total: 6000 }]), subtotal: "6000", taxRate: "10", taxAmount: "600", total: "6600", paidAmount: "0", dueDate: new Date("2024-11-30"), notes: "Draft - not sent", createdBy: "4", createdAt: new Date("2024-10-26"), updatedAt: new Date("2024-10-26") },
-];
+type InvoiceStatus = "draft" | "sent" | "paid" | "partial" | "overdue";
 
 const statusColors: Record<InvoiceStatus, string> = {
   draft: "bg-muted text-muted-foreground",
   sent: "bg-chart-1 text-white",
   paid: "bg-chart-2 text-white",
   overdue: "bg-destructive text-destructive-foreground",
-  cancelled: "bg-muted text-muted-foreground",
+  partial: "bg-chart-3 text-white",
 };
 
-const paymentStatusColors: Record<PaymentStatus, string> = {
+const paymentStatusColors = {
   pending: "bg-chart-4 text-white",
   partial: "bg-chart-3 text-white",
   paid: "bg-chart-2 text-white",
@@ -43,18 +37,20 @@ export default function Invoices() {
 
   const isClient = user?.role === "client";
 
-  const filteredInvoices = mockInvoices.filter(invoice =>
+  const allInvoices = useMemo(() => mockDataService.getInvoices(), []);
+
+  const filteredInvoices = allInvoices.filter(invoice =>
     invoice.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
     invoice.clientName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const totalOutstanding = filteredInvoices
-    .filter(inv => inv.paymentStatus !== "paid")
-    .reduce((sum, inv) => sum + (parseFloat(inv.total) - parseFloat(inv.paidAmount)), 0);
+    .filter(inv => inv.status !== "paid")
+    .reduce((sum, inv) => sum + (inv.totalAmount - inv.paidAmount), 0);
 
   const totalPaid = filteredInvoices
-    .filter(inv => inv.paymentStatus === "paid")
-    .reduce((sum, inv) => sum + parseFloat(inv.total), 0);
+    .filter(inv => inv.status === "paid")
+    .reduce((sum, inv) => sum + inv.totalAmount, 0);
 
   return (
     <div className="space-y-6">

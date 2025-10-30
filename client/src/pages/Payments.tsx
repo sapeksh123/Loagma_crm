@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { mockDataService, type PaymentMethod } from "@/services/mockData";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,33 +13,27 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Search, DollarSign, TrendingUp } from "lucide-react";
-import type { Payment, PaymentMethod } from "@shared/schema";
-
-const mockPayments: (Payment & { invoiceNumber?: string; clientName?: string })[] = [
-  { id: "1", invoiceId: "1", invoiceNumber: "INV-2024-001", clientName: "Global Solutions Ltd", amount: "55000", paymentMethod: "bank_transfer", transactionId: "TXN-001-BT", notes: "Full payment", recordedBy: "4", paymentDate: new Date("2024-10-20"), createdAt: new Date("2024-10-20") },
-  { id: "2", invoiceId: "2", invoiceNumber: "INV-2024-002", clientName: "Tech Innovations Inc", amount: "3300", paymentMethod: "credit_card", transactionId: "TXN-002-CC", notes: "50% advance", recordedBy: "4", paymentDate: new Date("2024-10-22"), createdAt: new Date("2024-10-22") },
-  { id: "3", invoiceId: "1", invoiceNumber: "INV-2024-001", clientName: "Global Solutions Ltd", amount: "6000", paymentMethod: "check", transactionId: "CHK-12345", notes: "Additional services", recordedBy: "4", paymentDate: new Date("2024-10-24"), createdAt: new Date("2024-10-24") },
-  { id: "4", invoiceId: "3", invoiceNumber: "INV-2024-003", clientName: "Enterprise Systems Corp", amount: "13200", paymentMethod: "online", transactionId: "TXN-004-ONL", notes: "Online payment", recordedBy: "4", paymentDate: new Date("2024-10-25"), createdAt: new Date("2024-10-25") },
-];
 
 const paymentMethodColors: Record<PaymentMethod, string> = {
   cash: "bg-chart-2 text-white",
-  check: "bg-chart-4 text-white",
+  cheque: "bg-chart-4 text-white",
   bank_transfer: "bg-chart-1 text-white",
-  credit_card: "bg-chart-3 text-white",
-  online: "bg-chart-1 text-white",
+  upi: "bg-chart-3 text-white",
+  card: "bg-chart-1 text-white",
 };
 
 export default function Payments() {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredPayments = mockPayments.filter(payment =>
+  const allPayments = useMemo(() => mockDataService.getPayments(), []);
+
+  const filteredPayments = allPayments.filter(payment =>
     payment.invoiceNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     payment.clientName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    payment.transactionId?.toLowerCase().includes(searchQuery.toLowerCase())
+    payment.referenceNumber?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const totalPayments = filteredPayments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
+  const totalPayments = filteredPayments.reduce((sum, payment) => sum + payment.amount, 0);
 
   return (
     <div className="space-y-6">

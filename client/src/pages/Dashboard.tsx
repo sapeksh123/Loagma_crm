@@ -1,4 +1,6 @@
+import { useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { mockDataService } from "@/services/mockData";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   UserPlus, 
@@ -42,12 +44,32 @@ ChartJS.register(
 export default function Dashboard() {
   const { user } = useAuth();
 
+  const allLeads = useMemo(() => mockDataService.getLeads(), []);
+  const allClients = useMemo(() => mockDataService.getClients(), []);
+  const allInvoices = useMemo(() => mockDataService.getInvoices(), []);
+  const allTickets = useMemo(() => mockDataService.getServiceTickets(), []);
+  const allQuotations = useMemo(() => mockDataService.getQuotations(), []);
+  const allPayments = useMemo(() => mockDataService.getPayments(), []);
+  const allCallLogs = useMemo(() => mockDataService.getCallLogs(), []);
+
+  const totalRevenue = useMemo(() => 
+    allInvoices.filter(inv => inv.status === "paid").reduce((sum, inv) => sum + inv.totalAmount, 0),
+    [allInvoices]
+  );
+
+  const leadsByStatus = useMemo(() => ({
+    new: allLeads.filter(l => l.status === "new").length,
+    in_progress: allLeads.filter(l => l.status === "in_progress").length,
+    converted: allLeads.filter(l => l.status === "converted").length,
+    lost: allLeads.filter(l => l.status === "lost").length,
+  }), [allLeads]);
+
   const revenueData = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
     datasets: [
       {
         label: 'Revenue',
-        data: [45000, 52000, 48000, 61000, 58000, 67000],
+        data: [45000, 52000, 48000, 61000, 58000, totalRevenue],
         borderColor: 'hsl(217, 91%, 52%)',
         backgroundColor: 'hsla(217, 91%, 52%, 0.1)',
         tension: 0.4,
@@ -60,7 +82,7 @@ export default function Dashboard() {
     datasets: [
       {
         label: 'Leads',
-        data: [45, 32, 28, 15],
+        data: [leadsByStatus.new, leadsByStatus.in_progress, leadsByStatus.converted, leadsByStatus.lost],
         backgroundColor: [
           'hsl(217, 91%, 52%)',
           'hsl(32, 95%, 48%)',
@@ -94,44 +116,53 @@ export default function Dashboard() {
     },
   };
 
-  const stats = {
-    admin: [
-      { title: "Total Leads", value: "120", change: "+12.5%", trend: "up", icon: UserPlus, color: "text-chart-1" },
-      { title: "Active Clients", value: "87", change: "+8.2%", trend: "up", icon: Users, color: "text-chart-2" },
-      { title: "Revenue (MTD)", value: "$67,450", change: "+15.3%", trend: "up", icon: DollarSign, color: "text-chart-2" },
-      { title: "Open Tickets", value: "24", change: "-5.1%", trend: "down", icon: Wrench, color: "text-chart-4" },
-    ],
-    sales_manager: [
-      { title: "Total Leads", value: "120", change: "+12.5%", trend: "up", icon: UserPlus, color: "text-chart-1" },
-      { title: "Conversions", value: "28", change: "+18.5%", trend: "up", icon: CheckCircle2, color: "text-chart-2" },
-      { title: "Pending Quotes", value: "15", change: "+3", trend: "up", icon: FileText, color: "text-chart-4" },
-      { title: "Team Performance", value: "92%", change: "+4.2%", trend: "up", icon: TrendingUp, color: "text-chart-2" },
-    ],
-    sales_executive: [
-      { title: "My Leads", value: "32", change: "+5", trend: "up", icon: UserPlus, color: "text-chart-1" },
-      { title: "Follow-ups Today", value: "8", change: "Due", trend: "neutral", icon: Clock, color: "text-chart-4" },
-      { title: "Quotations Sent", value: "12", change: "+2", trend: "up", icon: FileText, color: "text-chart-1" },
-      { title: "Conversion Rate", value: "24%", change: "+3.1%", trend: "up", icon: TrendingUp, color: "text-chart-2" },
-    ],
-    accountant: [
-      { title: "Total Invoices", value: "156", change: "+18", trend: "up", icon: Receipt, color: "text-chart-1" },
-      { title: "Outstanding", value: "$42,300", change: "-$5.2k", trend: "down", icon: AlertCircle, color: "text-chart-4" },
-      { title: "Paid (MTD)", value: "$67,450", change: "+15.3%", trend: "up", icon: DollarSign, color: "text-chart-2" },
-      { title: "Overdue", value: "8", change: "-2", trend: "down", icon: AlertCircle, color: "text-chart-5" },
-    ],
-    engineer: [
-      { title: "Assigned Tickets", value: "12", change: "+3", trend: "up", icon: Wrench, color: "text-chart-1" },
-      { title: "In Progress", value: "5", change: "Active", trend: "neutral", icon: Clock, color: "text-chart-4" },
-      { title: "Resolved Today", value: "4", change: "+2", trend: "up", icon: CheckCircle2, color: "text-chart-2" },
-      { title: "Pending", value: "7", change: "+1", trend: "up", icon: AlertCircle, color: "text-chart-4" },
-    ],
-    client: [
-      { title: "Active Quotes", value: "3", change: "Pending", trend: "neutral", icon: FileText, color: "text-chart-1" },
-      { title: "Invoices", value: "8", change: "2 Unpaid", trend: "neutral", icon: Receipt, color: "text-chart-4" },
-      { title: "Open Tickets", value: "2", change: "In Progress", trend: "neutral", icon: Wrench, color: "text-chart-4" },
-      { title: "Total Spent", value: "$24,560", change: "YTD", trend: "neutral", icon: DollarSign, color: "text-chart-1" },
-    ],
-  };
+  const stats = useMemo(() => {
+    const myLeads = allLeads.filter(l => l.assignedTo === user?.id);
+    const myTickets = allTickets.filter(t => t.assignedTo === user?.id);
+    const openTickets = allTickets.filter(t => t.status === "open" || t.status === "in_progress");
+    const pendingQuotes = allQuotations.filter(q => q.status === "draft" || q.status === "sent");
+    const overdueInvoices = allInvoices.filter(i => i.status === "overdue");
+    const outstanding = allInvoices.filter(i => i.status !== "paid").reduce((sum, inv) => sum + (inv.totalAmount - inv.paidAmount), 0);
+
+    return {
+      admin: [
+        { title: "Total Leads", value: allLeads.length.toString(), change: "+12.5%", trend: "up", icon: UserPlus, color: "text-chart-1" },
+        { title: "Active Clients", value: allClients.length.toString(), change: "+8.2%", trend: "up", icon: Users, color: "text-chart-2" },
+        { title: "Revenue (MTD)", value: `$${(totalRevenue / 1000).toFixed(1)}k`, change: "+15.3%", trend: "up", icon: DollarSign, color: "text-chart-2" },
+        { title: "Open Tickets", value: openTickets.length.toString(), change: "-5.1%", trend: "down", icon: Wrench, color: "text-chart-4" },
+      ],
+      sales_manager: [
+        { title: "Total Leads", value: allLeads.length.toString(), change: "+12.5%", trend: "up", icon: UserPlus, color: "text-chart-1" },
+        { title: "Conversions", value: leadsByStatus.converted.toString(), change: "+18.5%", trend: "up", icon: CheckCircle2, color: "text-chart-2" },
+        { title: "Pending Quotes", value: pendingQuotes.length.toString(), change: "+3", trend: "up", icon: FileText, color: "text-chart-4" },
+        { title: "Team Performance", value: "92%", change: "+4.2%", trend: "up", icon: TrendingUp, color: "text-chart-2" },
+      ],
+      sales_executive: [
+        { title: "My Leads", value: myLeads.length.toString(), change: "+5", trend: "up", icon: UserPlus, color: "text-chart-1" },
+        { title: "Follow-ups Today", value: allCallLogs.filter(l => l.followUpDate).length.toString(), change: "Due", trend: "neutral", icon: Clock, color: "text-chart-4" },
+        { title: "Quotations Sent", value: allQuotations.filter(q => q.createdBy === user?.id).length.toString(), change: "+2", trend: "up", icon: FileText, color: "text-chart-1" },
+        { title: "Conversion Rate", value: myLeads.length > 0 ? `${Math.round((myLeads.filter(l => l.status === "converted").length / myLeads.length) * 100)}%` : "0%", change: "+3.1%", trend: "up", icon: TrendingUp, color: "text-chart-2" },
+      ],
+      accountant: [
+        { title: "Total Invoices", value: allInvoices.length.toString(), change: "+18", trend: "up", icon: Receipt, color: "text-chart-1" },
+        { title: "Outstanding", value: `$${(outstanding / 1000).toFixed(1)}k`, change: "-$5.2k", trend: "down", icon: AlertCircle, color: "text-chart-4" },
+        { title: "Paid (MTD)", value: `$${(totalRevenue / 1000).toFixed(1)}k`, change: "+15.3%", trend: "up", icon: DollarSign, color: "text-chart-2" },
+        { title: "Overdue", value: overdueInvoices.length.toString(), change: "-2", trend: "down", icon: AlertCircle, color: "text-chart-5" },
+      ],
+      engineer: [
+        { title: "Assigned Tickets", value: myTickets.length.toString(), change: "+3", trend: "up", icon: Wrench, color: "text-chart-1" },
+        { title: "In Progress", value: myTickets.filter(t => t.status === "in_progress").length.toString(), change: "Active", trend: "neutral", icon: Clock, color: "text-chart-4" },
+        { title: "Resolved Today", value: myTickets.filter(t => t.status === "resolved").length.toString(), change: "+2", trend: "up", icon: CheckCircle2, color: "text-chart-2" },
+        { title: "Pending", value: myTickets.filter(t => t.status === "open").length.toString(), change: "+1", trend: "up", icon: AlertCircle, color: "text-chart-4" },
+      ],
+      client: [
+        { title: "Active Quotes", value: allQuotations.filter(q => q.status === "sent" || q.status === "draft").length.toString(), change: "Pending", trend: "neutral", icon: FileText, color: "text-chart-1" },
+        { title: "Invoices", value: allInvoices.length.toString(), change: `${allInvoices.filter(i => i.status !== "paid").length} Unpaid`, trend: "neutral", icon: Receipt, color: "text-chart-4" },
+        { title: "Open Tickets", value: openTickets.length.toString(), change: "In Progress", trend: "neutral", icon: Wrench, color: "text-chart-4" },
+        { title: "Total Spent", value: `$${(totalRevenue / 1000).toFixed(1)}k`, change: "YTD", trend: "neutral", icon: DollarSign, color: "text-chart-1" },
+      ],
+    };
+  }, [allLeads, allClients, allInvoices, allTickets, allQuotations, allCallLogs, allPayments, user, leadsByStatus, totalRevenue]);
 
   const roleStats = stats[user?.role || "admin"];
 

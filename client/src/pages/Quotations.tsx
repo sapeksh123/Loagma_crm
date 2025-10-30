@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { mockDataService, type QuotationStatus } from "@/services/mockData";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,22 +14,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Search, Eye, Edit, Check, X, Download } from "lucide-react";
-import type { Quotation, QuotationStatus } from "@shared/schema";
-
-const mockQuotations: (Quotation & { clientName?: string; createdByName?: string })[] = [
-  { id: "1", quotationNumber: "QUO-2024-001", clientId: "1", clientName: "Global Solutions Ltd", leadId: null, status: "approved", items: JSON.stringify([{ id: "1", description: "Enterprise Software License", quantity: 10, unitPrice: 5000, total: 50000 }]), subtotal: "50000", taxRate: "10", taxAmount: "5000", total: "55000", validUntil: new Date("2024-11-30"), notes: "Annual subscription", createdBy: "3", createdByName: "Mike Executive", approvedBy: "2", createdAt: new Date("2024-10-10"), updatedAt: new Date("2024-10-15") },
-  { id: "2", quotationNumber: "QUO-2024-002", clientId: "2", clientName: "Tech Innovations Inc", leadId: null, status: "pending_approval", items: JSON.stringify([{ id: "1", description: "Consulting Services", quantity: 40, unitPrice: 150, total: 6000 }]), subtotal: "6000", taxRate: "10", taxAmount: "600", total: "6600", validUntil: new Date("2024-11-15"), notes: "Project phase 1", createdBy: "3", createdByName: "Mike Executive", approvedBy: null, createdAt: new Date("2024-10-20"), updatedAt: new Date("2024-10-20") },
-  { id: "3", quotationNumber: "QUO-2024-003", clientId: "3", clientName: "Enterprise Systems Corp", leadId: null, status: "draft", items: JSON.stringify([{ id: "1", description: "Support Package", quantity: 1, unitPrice: 12000, total: 12000 }]), subtotal: "12000", taxRate: "10", taxAmount: "1200", total: "13200", validUntil: new Date("2024-12-01"), notes: "Premium support", createdBy: "3", createdByName: "Mike Executive", approvedBy: null, createdAt: new Date("2024-10-25"), updatedAt: new Date("2024-10-25") },
-  { id: "4", quotationNumber: "QUO-2024-004", clientId: "4", clientName: "Digital Marketing Pro", leadId: null, status: "converted", items: JSON.stringify([{ id: "1", description: "Marketing Platform", quantity: 1, unitPrice: 8500, total: 8500 }]), subtotal: "8500", taxRate: "10", taxAmount: "850", total: "9350", validUntil: new Date("2024-10-31"), notes: "Converted to invoice", createdBy: "3", createdByName: "Mike Executive", approvedBy: "2", createdAt: new Date("2024-09-15"), updatedAt: new Date("2024-10-01") },
-  { id: "5", quotationNumber: "QUO-2024-005", clientId: "5", clientName: "CloudTech Solutions", leadId: null, status: "rejected", items: JSON.stringify([{ id: "1", description: "Cloud Infrastructure", quantity: 5, unitPrice: 3000, total: 15000 }]), subtotal: "15000", taxRate: "10", taxAmount: "1500", total: "16500", validUntil: new Date("2024-10-20"), notes: "Budget constraints", createdBy: "3", createdByName: "Mike Executive", approvedBy: null, createdAt: new Date("2024-09-28"), updatedAt: new Date("2024-10-10") },
-];
 
 const statusColors: Record<QuotationStatus, string> = {
   draft: "bg-muted text-muted-foreground",
-  pending_approval: "bg-chart-4 text-white",
+  sent: "bg-chart-4 text-white",
   approved: "bg-chart-2 text-white",
   rejected: "bg-destructive text-destructive-foreground",
-  converted: "bg-chart-1 text-white",
 };
 
 export default function Quotations() {
@@ -39,7 +30,9 @@ export default function Quotations() {
   const isClient = user?.role === "client";
   const isAccountant = user?.role === "accountant";
 
-  const filteredQuotations = mockQuotations.filter(quote => {
+  const allQuotations = useMemo(() => mockDataService.getQuotations(), []);
+
+  const filteredQuotations = allQuotations.filter(quote => {
     const matchesSearch = quote.quotationNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          quote.clientName?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || quote.status === statusFilter;

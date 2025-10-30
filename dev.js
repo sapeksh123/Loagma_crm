@@ -1,6 +1,7 @@
-// Frontend-only mode - Just run Vite dev server
+#!/usr/bin/env node
 import { spawn } from 'child_process';
 
+// Run Vite development server for frontend-only mode
 const vite = spawn('npx', ['vite', '--port', '5000', '--host', '0.0.0.0'], {
   stdio: 'inherit',
   cwd: process.cwd()

@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { mockDataService } from "@/services/mockData";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,16 +32,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Search, Filter, Eye, Edit, Trash2, Phone, Mail } from "lucide-react";
-import type { Lead, LeadStatus, LeadSource } from "@shared/schema";
-
-const mockLeads: (Lead & { assignedToName?: string })[] = [
-  { id: "1", companyName: "Acme Corporation", contactPerson: "John Smith", email: "john@acme.com", phone: "+1-555-1001", status: "new", source: "website", assignedTo: "3", assignedToName: "Mike Executive", notes: "Interested in enterprise solution", estimatedValue: "50000", createdAt: new Date("2024-10-15"), updatedAt: new Date("2024-10-15") },
-  { id: "2", companyName: "Tech Industries", contactPerson: "Sarah Johnson", email: "sarah@techindustries.com", phone: "+1-555-1002", status: "in_progress", source: "referral", assignedTo: "3", assignedToName: "Mike Executive", notes: "Follow-up scheduled for next week", estimatedValue: "75000", createdAt: new Date("2024-10-12"), updatedAt: new Date("2024-10-20") },
-  { id: "3", companyName: "Global Solutions", contactPerson: "Mike Davis", email: "mike@globalsol.com", phone: "+1-555-1003", status: "converted", source: "cold_call", assignedTo: "3", assignedToName: "Mike Executive", notes: "Converted to client", estimatedValue: "120000", createdAt: new Date("2024-09-20"), updatedAt: new Date("2024-10-18") },
-  { id: "4", companyName: "Innovation Labs", contactPerson: "Emily Brown", email: "emily@innovlabs.com", phone: "+1-555-1004", status: "in_progress", source: "social_media", assignedTo: "3", assignedToName: "Mike Executive", notes: "Sent proposal, awaiting feedback", estimatedValue: "45000", createdAt: new Date("2024-10-18"), updatedAt: new Date("2024-10-22") },
-  { id: "5", companyName: "Digital Dynamics", contactPerson: "Robert Wilson", email: "robert@digitaldyn.com", phone: "+1-555-1005", status: "lost", source: "trade_show", assignedTo: "3", assignedToName: "Mike Executive", notes: "Went with competitor", estimatedValue: "60000", createdAt: new Date("2024-09-10"), updatedAt: new Date("2024-10-05") },
-  { id: "6", companyName: "Future Systems", contactPerson: "Lisa Anderson", email: "lisa@futuresys.com", phone: "+1-555-1006", status: "new", source: "website", assignedTo: null, notes: "Initial contact made", estimatedValue: "35000", createdAt: new Date("2024-10-25"), updatedAt: new Date("2024-10-25") },
-];
+import type { LeadStatus } from "@/services/mockData";
 
 const statusColors: Record<LeadStatus, string> = {
   new: "bg-chart-1 text-white",
@@ -55,7 +47,9 @@ export default function Leads() {
   const [statusFilter, setStatusFilter] = useState<LeadStatus | "all">("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const filteredLeads = mockLeads.filter(lead => {
+  const allLeads = useMemo(() => mockDataService.getLeads(), []);
+
+  const filteredLeads = allLeads.filter(lead => {
     const matchesSearch = lead.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          lead.contactPerson.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || lead.status === statusFilter;

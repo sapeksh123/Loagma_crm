@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import type { User } from "@shared/schema";
-import { api } from "@/lib/api";
+import { mockAuth, type User } from "@/services/mockData";
 
 interface AuthContextType {
   user: User | null;
@@ -16,35 +15,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("crm_token");
-    if (token) {
-      api.getMe()
-        .then(setUser)
-        .catch(() => {
-          localStorage.removeItem("crm_token");
-        })
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
+    const savedUser = localStorage.getItem("crm_user");
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch {
+        localStorage.removeItem("crm_user");
+      }
     }
+    setLoading(false);
   }, []);
 
   const login = async (username: string, password: string): Promise<boolean> => {
-    try {
-      const { user: loggedInUser, token } = await api.login(username, password);
+    const loggedInUser = mockAuth.login(username, password);
+    if (loggedInUser) {
       setUser(loggedInUser);
-      localStorage.setItem("crm_token", token);
+      localStorage.setItem("crm_user", JSON.stringify(loggedInUser));
       return true;
-    } catch (error) {
-      console.error("Login failed:", error);
-      return false;
     }
+    return false;
   };
 
   const logout = () => {
-    api.logout().catch(console.error);
     setUser(null);
-    localStorage.removeItem("crm_token");
+    localStorage.removeItem("crm_user");
   };
 
   if (loading) {

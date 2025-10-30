@@ -1,15 +1,45 @@
+import { useMemo } from "react";
+import { mockDataService } from "@/services/mockData";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bar, Line, Doughnut } from "react-chartjs-2";
 import { DollarSign, Users, TrendingUp, FileText } from "lucide-react";
 
 export default function Reports() {
+  const allLeads = useMemo(() => mockDataService.getLeads(), []);
+  const allClients = useMemo(() => mockDataService.getClients(), []);
+  const allInvoices = useMemo(() => mockDataService.getInvoices(), []);
+  const allQuotations = useMemo(() => mockDataService.getQuotations(), []);
+
+  const totalRevenue = useMemo(() => 
+    allInvoices.filter(inv => inv.status === "paid").reduce((sum, inv) => sum + inv.totalAmount, 0),
+    [allInvoices]
+  );
+
+  const conversionRate = useMemo(() => {
+    const converted = allLeads.filter(l => l.status === "converted").length;
+    return allLeads.length > 0 ? ((converted / allLeads.length) * 100).toFixed(1) : "0";
+  }, [allLeads]);
+
+  const avgDealSize = useMemo(() => {
+    const paidInvoices = allInvoices.filter(inv => inv.status === "paid");
+    return paidInvoices.length > 0 ? totalRevenue / paidInvoices.length : 0;
+  }, [allInvoices, totalRevenue]);
+
+  const leadsBySource = useMemo(() => {
+    const sources = allLeads.reduce((acc, lead) => {
+      acc[lead.source] = (acc[lead.source] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    return sources;
+  }, [allLeads]);
+
   const salesData = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
     datasets: [
       {
         label: 'Revenue',
-        data: [45000, 52000, 48000, 61000, 58000, 67000, 71000, 69000, 75000, 82000],
+        data: [45000, 52000, 48000, 61000, 58000, 67000, 71000, 69000, 75000, totalRevenue],
         borderColor: 'hsl(217, 91%, 52%)',
         backgroundColor: 'hsla(217, 91%, 52%, 0.1)',
         tension: 0.4,
@@ -18,11 +48,17 @@ export default function Reports() {
   };
 
   const leadSourceData = {
-    labels: ['Website', 'Referral', 'Cold Call', 'Social Media', 'Trade Show'],
+    labels: ['Website', 'Referral', 'Cold Call', 'Social Media', 'Other'],
     datasets: [
       {
         label: 'Lead Sources',
-        data: [35, 25, 15, 20, 5],
+        data: [
+          leadsBySource.website || 0,
+          leadsBySource.referral || 0,
+          leadsBySource.cold_call || 0,
+          leadsBySource.social_media || 0,
+          leadsBySource.trade_show || 0,
+        ],
         backgroundColor: [
           'hsl(217, 91%, 52%)',
           'hsl(142, 76%, 36%)',
@@ -39,12 +75,12 @@ export default function Reports() {
     datasets: [
       {
         label: 'Leads',
-        data: [45, 52, 48, 61, 58, 67, 71, 69, 75, 82],
+        data: [45, 52, 48, 61, 58, 67, 71, 69, 75, allLeads.length],
         backgroundColor: 'hsl(217, 91%, 52%)',
       },
       {
         label: 'Conversions',
-        data: [12, 15, 13, 18, 16, 22, 24, 21, 26, 28],
+        data: [12, 15, 13, 18, 16, 22, 24, 21, 26, allLeads.filter(l => l.status === "converted").length],
         backgroundColor: 'hsl(142, 76%, 36%)',
       },
     ],
@@ -101,7 +137,7 @@ export default function Reports() {
             <DollarSign className="h-4 w-4 text-chart-2" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$658,000</div>
+            <div className="text-2xl font-bold">${(totalRevenue / 1000).toFixed(0)}k</div>
             <p className="text-xs text-muted-foreground mt-1">
               <TrendingUp className="h-3 w-3 inline mr-1 text-chart-2" />
               <span className="text-chart-2">+18.2%</span> from last year
@@ -114,7 +150,7 @@ export default function Reports() {
             <TrendingUp className="h-4 w-4 text-chart-2" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">34.2%</div>
+            <div className="text-2xl font-bold">{conversionRate}%</div>
             <p className="text-xs text-muted-foreground mt-1">
               <span className="text-chart-2">+4.1%</span> from last month
             </p>
@@ -126,7 +162,7 @@ export default function Reports() {
             <Users className="h-4 w-4 text-chart-1" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">87</div>
+            <div className="text-2xl font-bold">{allClients.length}</div>
             <p className="text-xs text-muted-foreground mt-1">
               <span className="text-chart-2">+12</span> new this month
             </p>
@@ -138,7 +174,7 @@ export default function Reports() {
             <FileText className="h-4 w-4 text-chart-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$7,563</div>
+            <div className="text-2xl font-bold">${avgDealSize.toFixed(0)}</div>
             <p className="text-xs text-muted-foreground mt-1">
               <span className="text-chart-2">+8.4%</span> from last quarter
             </p>

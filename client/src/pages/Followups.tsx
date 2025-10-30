@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { mockDataService, type CallType } from "@/services/mockData";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,45 +13,33 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Search, Eye, CheckCircle2, Phone, Mail, Calendar, MessageSquare } from "lucide-react";
-import type { CallLog, CallType } from "@shared/schema";
-
-const mockCallLogs: (CallLog & { leadName?: string; clientName?: string })[] = [
-  { id: "1", leadId: "1", clientId: null, leadName: "Acme Corporation", type: "call", subject: "Initial consultation", notes: "Discussed requirements for enterprise solution. Follow-up scheduled for next week.", scheduledFor: new Date("2024-10-30"), completed: 0, createdBy: "3", createdAt: new Date("2024-10-20") },
-  { id: "2", leadId: "2", clientId: null, leadName: "Tech Industries", type: "email", subject: "Proposal sent", notes: "Sent detailed proposal document. Awaiting response.", scheduledFor: null, completed: 1, createdBy: "3", createdAt: new Date("2024-10-22") },
-  { id: "3", leadId: null, clientId: "1", clientName: "Global Solutions Ltd", type: "meeting", subject: "Quarterly review meeting", notes: "Reviewed service performance and discussed expansion plans.", scheduledFor: new Date("2024-11-05"), completed: 0, createdBy: "3", createdAt: new Date("2024-10-23") },
-  { id: "4", leadId: "4", clientId: null, leadName: "Innovation Labs", type: "call", subject: "Follow-up on proposal", notes: "Client requested modifications to proposal. Agreed to send revised version by Friday.", scheduledFor: null, completed: 1, createdBy: "3", createdAt: new Date("2024-10-24") },
-  { id: "5", leadId: null, clientId: "2", clientName: "Tech Innovations Inc", type: "note", subject: "Payment reminder", notes: "Sent friendly reminder about pending invoice INV-2024-002.", scheduledFor: null, completed: 1, createdBy: "3", createdAt: new Date("2024-10-25") },
-  { id: "6", leadId: "1", clientId: null, leadName: "Acme Corporation", type: "call", subject: "Pricing discussion", notes: "Discussed volume discounts and payment terms.", scheduledFor: new Date("2024-10-28"), completed: 0, createdBy: "3", createdAt: new Date("2024-10-26") },
-];
 
 const typeIcons: Record<CallType, typeof Phone> = {
-  call: Phone,
-  email: Mail,
-  meeting: Calendar,
-  note: MessageSquare,
+  outgoing: Phone,
+  incoming: Mail,
 };
 
 const typeColors: Record<CallType, string> = {
-  call: "bg-chart-1 text-white",
-  email: "bg-chart-2 text-white",
-  meeting: "bg-chart-4 text-white",
-  note: "bg-muted text-muted-foreground",
+  outgoing: "bg-chart-1 text-white",
+  incoming: "bg-chart-2 text-white",
 };
 
 export default function Followups() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showPending, setShowPending] = useState(false);
 
-  const filteredLogs = mockCallLogs.filter(log => {
-    const matchesSearch = log.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  const allLogs = useMemo(() => mockDataService.getCallLogs(), []);
+
+  const filteredLogs = allLogs.filter(log => {
+    const matchesSearch = log.purpose.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          log.leadName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          log.clientName?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesPending = !showPending || log.completed === 0;
+    const matchesPending = !showPending || (log.followUpDate && new Date(log.followUpDate) > new Date());
     return matchesSearch && matchesPending;
   });
 
-  const upcomingCount = mockCallLogs.filter(log => log.completed === 0 && log.scheduledFor).length;
-  const completedCount = mockCallLogs.filter(log => log.completed === 1).length;
+  const upcomingCount = allLogs.filter(log => log.followUpDate && new Date(log.followUpDate) > new Date()).length;
+  const completedCount = allLogs.filter(log => !log.followUpDate || new Date(log.followUpDate) < new Date()).length;
 
   return (
     <div className="space-y-6">
@@ -90,26 +79,26 @@ export default function Followups() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Calls</CardTitle>
+            <CardTitle className="text-sm font-medium">Outgoing</CardTitle>
             <Phone className="h-4 w-4 text-chart-1" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {mockCallLogs.filter(log => log.type === "call").length}
+              {allLogs.filter(log => log.callType === "outgoing").length}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Phone calls logged</p>
+            <p className="text-xs text-muted-foreground mt-1">Outgoing calls</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Meetings</CardTitle>
+            <CardTitle className="text-sm font-medium">Incoming</CardTitle>
             <Calendar className="h-4 w-4 text-chart-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {mockCallLogs.filter(log => log.type === "meeting").length}
+              {allLogs.filter(log => log.callType === "incoming").length}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Meetings scheduled</p>
+            <p className="text-xs text-muted-foreground mt-1">Incoming calls</p>
           </CardContent>
         </Card>
       </div>
@@ -164,31 +153,32 @@ export default function Followups() {
                   </TableRow>
                 ) : (
                   filteredLogs.map((log) => {
-                    const Icon = typeIcons[log.type];
+                    const Icon = typeIcons[log.callType];
+                    const isPending = log.followUpDate && new Date(log.followUpDate) > new Date();
                     return (
                       <TableRow key={log.id} data-testid={`followup-row-${log.id}`}>
                         <TableCell>
-                          <Badge className={typeColors[log.type]} data-testid={`badge-type-${log.id}`}>
+                          <Badge className={typeColors[log.callType]} data-testid={`badge-type-${log.id}`}>
                             <Icon className="h-3 w-3 mr-1" />
-                            {log.type}
+                            {log.callType}
                           </Badge>
                         </TableCell>
-                        <TableCell className="font-medium">{log.subject}</TableCell>
+                        <TableCell className="font-medium">{log.purpose}</TableCell>
                         <TableCell>{log.leadName || log.clientName || "N/A"}</TableCell>
                         <TableCell className="max-w-[250px] truncate text-sm text-muted-foreground">
                           {log.notes}
                         </TableCell>
                         <TableCell>
-                          {log.scheduledFor ? new Date(log.scheduledFor).toLocaleDateString() : "-"}
+                          {log.followUpDate ? new Date(log.followUpDate).toLocaleDateString() : "-"}
                         </TableCell>
                         <TableCell>
-                          {log.completed === 1 ? (
+                          {isPending ? (
+                            <Badge className="bg-chart-4 text-white">Pending</Badge>
+                          ) : (
                             <Badge className="bg-chart-2 text-white">
                               <CheckCircle2 className="h-3 w-3 mr-1" />
                               Done
                             </Badge>
-                          ) : (
-                            <Badge className="bg-chart-4 text-white">Pending</Badge>
                           )}
                         </TableCell>
                         <TableCell className="text-right">
@@ -196,7 +186,7 @@ export default function Followups() {
                             <Button variant="ghost" size="icon" data-testid={`button-view-${log.id}`}>
                               <Eye className="h-4 w-4" />
                             </Button>
-                            {log.completed === 0 && (
+                            {isPending && (
                               <Button variant="ghost" size="icon" className="text-chart-2" data-testid={`button-complete-${log.id}`}>
                                 <CheckCircle2 className="h-4 w-4" />
                               </Button>
