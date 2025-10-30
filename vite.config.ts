@@ -4,16 +4,16 @@ import path from "path";
 
 export default defineConfig({
   plugins: [react()],
-  root: path.resolve(__dirname, "client"),
+  css: {
+    postcss: './postcss.config.js',
+  },
   build: {
-    outDir: path.resolve(__dirname, "client/dist"), // ✅ stays inside client
+    outDir: path.resolve(__dirname, "dist"),
     emptyOutDir: true,
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "client/src"),
-      "@shared": path.resolve(__dirname, "shared"),
-      "@assets": path.resolve(__dirname, "attached_assets"),
+      "@": path.resolve(__dirname, "src"),
     },
   },
   server: {
