@@ -128,7 +128,7 @@ export default function Dashboard() {
       admin: [
         { title: "Total Leads", value: allLeads.length.toString(), change: "+12.5%", trend: "up", icon: UserPlus, color: "text-chart-1" },
         { title: "Active Clients", value: allClients.length.toString(), change: "+8.2%", trend: "up", icon: Users, color: "text-chart-2" },
-        { title: "Revenue (MTD)", value: `$${(totalRevenue / 1000).toFixed(1)}k`, change: "+15.3%", trend: "up", icon: DollarSign, color: "text-chart-2" },
+        { title: "Revenue (MTD)", value: `${(totalRevenue / 1000).toFixed(1)}k`, change: "+15.3%", trend: "up", icon: DollarSign, color: "text-chart-2" },
         { title: "Open Tickets", value: openTickets.length.toString(), change: "-5.1%", trend: "down", icon: Wrench, color: "text-chart-4" },
       ],
       sales_manager: [
@@ -145,8 +145,8 @@ export default function Dashboard() {
       ],
       accountant: [
         { title: "Total Invoices", value: allInvoices.length.toString(), change: "+18", trend: "up", icon: Receipt, color: "text-chart-1" },
-        { title: "Outstanding", value: `$${(outstanding / 1000).toFixed(1)}k`, change: "-$5.2k", trend: "down", icon: AlertCircle, color: "text-chart-4" },
-        { title: "Paid (MTD)", value: `$${(totalRevenue / 1000).toFixed(1)}k`, change: "+15.3%", trend: "up", icon: DollarSign, color: "text-chart-2" },
+        { title: "Outstanding", value: `Rs.${(outstanding / 1000).toFixed(1)}k`, change: "-Rs.5.2k", trend: "down", icon: AlertCircle, color: "text-chart-4" },
+        { title: "Paid (MTD)", value: `Rs.${(totalRevenue / 1000).toFixed(1)}k`, change: "+15.3%", trend: "up", icon: DollarSign, color: "text-chart-2" },
         { title: "Overdue", value: overdueInvoices.length.toString(), change: "-2", trend: "down", icon: AlertCircle, color: "text-chart-5" },
       ],
       engineer: [
@@ -159,7 +159,7 @@ export default function Dashboard() {
         { title: "Active Quotes", value: allQuotations.filter(q => q.status === "sent" || q.status === "draft").length.toString(), change: "Pending", trend: "neutral", icon: FileText, color: "text-chart-1" },
         { title: "Invoices", value: allInvoices.length.toString(), change: `${allInvoices.filter(i => i.status !== "paid").length} Unpaid`, trend: "neutral", icon: Receipt, color: "text-chart-4" },
         { title: "Open Tickets", value: openTickets.length.toString(), change: "In Progress", trend: "neutral", icon: Wrench, color: "text-chart-4" },
-        { title: "Total Spent", value: `$${(totalRevenue / 1000).toFixed(1)}k`, change: "YTD", trend: "neutral", icon: DollarSign, color: "text-chart-1" },
+        { title: "Total Spent", value: `Rs.${(totalRevenue / 1000).toFixed(1)}k`, change: "YTD", trend: "neutral", icon: DollarSign, color: "text-chart-1" },
       ],
     };
   }, [allLeads, allClients, allInvoices, allTickets, allQuotations, allCallLogs, allPayments, user, leadsByStatus, totalRevenue]);
@@ -171,7 +171,7 @@ export default function Dashboard() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground mt-1">
-          Welcome back, {user?.fullName}
+          Welcome back, {user?.name}
         </p>
       </div>
 
@@ -242,7 +242,7 @@ export default function Dashboard() {
           <div className="space-y-4">
             {[
               { action: "New lead created", detail: "Acme Corp - Software Solution", time: "2 hours ago", type: "lead" },
-              { action: "Invoice paid", detail: "INV-2024-156 - $12,450", time: "3 hours ago", type: "payment" },
+              { action: "Invoice paid", detail: "INV-2024-156 - Rs.12,450", time: "3 hours ago", type: "payment" },
               { action: "Quotation approved", detail: "QUO-2024-089 - Tech Industries", time: "5 hours ago", type: "quote" },
               { action: "Service ticket resolved", detail: "TKT-445 - Network Issue", time: "1 day ago", type: "ticket" },
               { action: "New client onboarded", detail: "Global Solutions Ltd", time: "2 days ago", type: "client" },

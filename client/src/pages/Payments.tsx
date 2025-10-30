@@ -1,5 +1,8 @@
 import { useState, useMemo } from "react";
-import { mockDataService, type PaymentMethod } from "@/services/mockData";
+import { mockDataService } from "@/services/mockData";
+
+// Define PaymentMethod type locally
+type PaymentMethod = "cash" | "cheque" | "bank_transfer" | "upi" | "card";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,7 +56,7 @@ export default function Payments() {
             <DollarSign className="h-4 w-4 text-chart-2" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalPayments.toLocaleString()}</div>
+            <div className="text-2xl font-bold">Rs.{totalPayments.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground mt-1">
               <TrendingUp className="h-3 w-3 inline mr-1 text-chart-2" />
               Across {filteredPayments.length} transactions
@@ -128,11 +131,11 @@ export default function Payments() {
                 ) : (
                   filteredPayments.map((payment) => (
                     <TableRow key={payment.id} data-testid={`payment-row-${payment.id}`}>
-                      <TableCell className="font-mono text-sm">{payment.transactionId}</TableCell>
+                      <TableCell className="font-mono text-sm">{payment.referenceNumber}</TableCell>
                       <TableCell className="font-mono">{payment.invoiceNumber}</TableCell>
                       <TableCell>{payment.clientName}</TableCell>
                       <TableCell className="font-mono font-semibold text-chart-2">
-                        ${parseFloat(payment.amount).toLocaleString()}
+                        {payment.amount.toLocaleString()}
                       </TableCell>
                       <TableCell>
                         <Badge className={paymentMethodColors[payment.paymentMethod]} data-testid={`badge-method-${payment.id}`}>

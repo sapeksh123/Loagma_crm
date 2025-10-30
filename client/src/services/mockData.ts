@@ -58,6 +58,7 @@ export interface Invoice {
   totalAmount: number;
   paidAmount: number;
   status: "draft" | "sent" | "paid" | "partial" | "overdue";
+  paymentStatus: "pending" | "partial" | "paid";
   dueDate: string;
   createdBy: number;
   createdAt: string;
@@ -188,6 +189,7 @@ export const mockInvoices: Invoice[] = [
     totalAmount: 60000,
     paidAmount: 60000,
     status: "paid",
+    paymentStatus: "paid",
     dueDate: "2024-10-31",
     createdBy: 4,
     createdAt: "2024-10-12T10:00:00Z",
@@ -203,6 +205,7 @@ export const mockInvoices: Invoice[] = [
     totalAmount: 30000,
     paidAmount: 15000,
     status: "partial",
+    paymentStatus: "partial",
     dueDate: "2024-11-15",
     createdBy: 4,
     createdAt: "2024-10-11T11:00:00Z",
@@ -219,6 +222,7 @@ export const mockInvoices: Invoice[] = [
     totalAmount: 100000,
     paidAmount: 0,
     status: "sent",
+    paymentStatus: "pending",
     dueDate: "2024-11-20",
     createdBy: 4,
     createdAt: "2024-10-06T09:00:00Z",
@@ -233,6 +237,7 @@ export const mockInvoices: Invoice[] = [
     totalAmount: 40000,
     paidAmount: 40000,
     status: "paid",
+    paymentStatus: "paid",
     dueDate: "2024-10-25",
     createdBy: 4,
     createdAt: "2024-09-26T14:00:00Z",
@@ -247,6 +252,7 @@ export const mockInvoices: Invoice[] = [
     totalAmount: 120000,
     paidAmount: 0,
     status: "overdue",
+    paymentStatus: "pending",
     dueDate: "2024-10-10",
     createdBy: 4,
     createdAt: "2024-09-11T16:00:00Z",

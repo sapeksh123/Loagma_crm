@@ -77,7 +77,7 @@ export default function Invoices() {
               <DollarSign className="h-4 w-4 text-chart-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${totalOutstanding.toLocaleString()}</div>
+              <div className="text-2xl font-bold">Rs.{totalOutstanding.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground mt-1">Across {filteredInvoices.filter(inv => inv.paymentStatus !== "paid").length} invoices</p>
             </CardContent>
           </Card>
@@ -87,7 +87,7 @@ export default function Invoices() {
               <DollarSign className="h-4 w-4 text-chart-2" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${totalPaid.toLocaleString()}</div>
+              <div className="text-2xl font-bold">Rs.{totalPaid.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground mt-1">{filteredInvoices.filter(inv => inv.paymentStatus === "paid").length} invoices</p>
             </CardContent>
           </Card>
@@ -152,10 +152,10 @@ export default function Invoices() {
                       <TableCell className="font-mono font-medium">{invoice.invoiceNumber}</TableCell>
                       <TableCell>{invoice.clientName}</TableCell>
                       <TableCell className="font-mono font-semibold">
-                        ${parseFloat(invoice.total).toLocaleString()}
+                        Rs.{invoice.totalAmount.toLocaleString()}
                       </TableCell>
                       <TableCell className="font-mono">
-                        ${parseFloat(invoice.paidAmount).toLocaleString()}
+                        Rs.{invoice.paidAmount.toLocaleString()}
                       </TableCell>
                       <TableCell>
                         <Badge className={statusColors[invoice.status]} data-testid={`badge-status-${invoice.id}`}>

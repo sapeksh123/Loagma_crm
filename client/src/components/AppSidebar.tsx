@@ -1,5 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "wouter";
+
 import {
   Sidebar,
   SidebarContent,
@@ -12,6 +13,7 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +21,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+
 import {
   LayoutDashboard,
   Users,
@@ -30,7 +33,6 @@ import {
   Phone,
   BarChart3,
   Settings,
-  Building2,
   ChevronUp,
   LogOut,
   User,
@@ -42,6 +44,9 @@ export function AppSidebar() {
 
   if (!user) return null;
 
+  // ----------------------------
+  // Navigation Configuration by Role
+  // ----------------------------
   const navigation = {
     admin: [
       { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
@@ -88,27 +93,39 @@ export function AppSidebar() {
 
   const menuItems = navigation[user.role] || navigation.admin;
 
+  // ----------------------------
+  // Render Sidebar
+  // ----------------------------
   return (
     <Sidebar>
+      {/* ---------- Header ---------- */}
       <SidebarHeader className="border-b border-sidebar-border p-4">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-md bg-sidebar-primary flex items-center justify-center">
-            <Building2 className="h-5 w-5 text-sidebar-primary-foreground" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold">CRM System</p>
-            <p className="text-xs text-muted-foreground capitalize">{user.role.replace("_", " ")}</p>
+        <div className="flex justify-center items-center">
+          <div className="flex flex-col items-center text-center">
+            <img
+              src="/image.png"
+              alt="App Logo"
+              width={100}
+              height={100}
+              className="rounded-xl object-contain drop-shadow-md"
+            />
+            <p className="mt-2 text-sm font-medium text-muted-foreground">
+              CRM + Accounting
+            </p>
           </div>
         </div>
       </SidebarHeader>
 
+      {/* ---------- Main Navigation ---------- */}
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => {
                 const isActive = location === item.path;
+
                 return (
                   <SidebarMenuItem key={item.path}>
                     <SidebarMenuButton
@@ -127,26 +144,40 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
+      {/* ---------- Footer / User Menu ---------- */}
       <SidebarFooter className="border-t border-sidebar-border p-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="w-full flex items-center gap-3 rounded-md px-3 py-2 hover-elevate active-elevate-2" data-testid="button-user-menu">
+            <button
+              className="w-full flex items-center gap-3 rounded-md px-3 py-2 hover:bg-accent/10 transition-colors"
+              data-testid="button-user-menu"
+            >
               <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
                 <User className="h-4 w-4 text-primary" />
               </div>
+
               <div className="flex-1 text-left min-w-0">
-                <p className="text-sm font-medium truncate">{user.fullName}</p>
-                <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                <p className="text-sm font-medium truncate">{user.name}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {user.email}
+                </p>
               </div>
+
               <ChevronUp className="h-4 w-4 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>
+
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem onClick={() => setLocation("/settings")} data-testid="menu-settings">
+            <DropdownMenuItem
+              onClick={() => setLocation("/settings")}
+              data-testid="menu-settings"
+            >
               <Settings className="h-4 w-4 mr-2" />
               Settings
             </DropdownMenuItem>
+
             <DropdownMenuSeparator />
+
             <DropdownMenuItem onClick={logout} data-testid="menu-logout">
               <LogOut className="h-4 w-4 mr-2" />
               Logout
